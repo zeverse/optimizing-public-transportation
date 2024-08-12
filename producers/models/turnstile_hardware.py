@@ -1,19 +1,19 @@
 import logging
 import math
+from datetime import datetime, timedelta
 from pathlib import Path
 import random
+from typing import Optional
 
 import pandas as pd
-
-from models.producer import Producer
-
+from pandas import DataFrame
 
 logger = logging.getLogger(__name__)
 
 
 class TurnstileHardware:
-    curve_df = None
-    seed_df = None
+    curve_df: Optional[DataFrame] = None
+    seed_df: Optional[DataFrame] = None
 
     def __init__(self, station):
         """Create the Turnstile"""
@@ -21,7 +21,7 @@ class TurnstileHardware:
         TurnstileHardware._load_data()
         self.metrics_df = TurnstileHardware.seed_df[
             TurnstileHardware.seed_df["station_id"] == station.station_id
-        ]
+            ]
         self.weekday_ridership = int(
             round(self.metrics_df.iloc[0]["avg_weekday_rides"])
         )
@@ -43,11 +43,11 @@ class TurnstileHardware:
                 f"{Path(__file__).parents[1]}/data/ridership_seed.csv"
             )
 
-    def get_entries(self, timestamp, time_step):
+    def get_entries(self, timestamp: datetime, time_step: timedelta) -> int:
         """Returns the number of turnstile entries for the given timeframe"""
         hour_curve = TurnstileHardware.curve_df[
             TurnstileHardware.curve_df["hour"] == timestamp.hour
-        ]
+            ]
         ratio = hour_curve.iloc[0]["ridership_ratio"]
         total_steps = int(60 / (60 / time_step.total_seconds()))
 

@@ -1,21 +1,24 @@
 """Defines functionality relating to train lines"""
-import collections
+
+from datetime import datetime, timedelta
 from enum import IntEnum
 import logging
 
-from models import Station, Train
+from pandas import DataFrame
 
+from models import Station, Train
 
 logger = logging.getLogger(__name__)
 
 
 class Line:
     """Contains Chicago Transit Authority (CTA) Elevated Loop Train ("L") Station Data"""
+    """A Train Line?"""
 
     colors = IntEnum("colors", "blue green red", start=0)
     num_directions = 2
 
-    def __init__(self, color, station_data, num_trains=10):
+    def __init__(self, color: IntEnum, station_data: DataFrame, num_trains: int = 10):
         self.color = color
         self.num_trains = num_trains
         self.stations = self._build_line_data(station_data)
@@ -23,7 +26,7 @@ class Line:
         self.num_stations = len(self.stations) - 1
         self.trains = self._build_trains()
 
-    def _build_line_data(self, station_df):
+    def _build_line_data(self, station_df: DataFrame) -> list[Station]:
         """Constructs all stations on the line"""
         stations = station_df["station_name"].unique()
 
@@ -45,7 +48,7 @@ class Line:
             line.append(new_station)
         return line
 
-    def _build_trains(self):
+    def _build_trains(self) -> list[Train]:
         """Constructs and assigns train objects to stations"""
         trains = []
         curr_loc = 0
@@ -65,7 +68,7 @@ class Line:
 
         return trains
 
-    def run(self, timestamp, time_step):
+    def run(self, timestamp: datetime, time_step: timedelta):
         """Advances trains between stations in the simulation. Runs turnstiles."""
         self._advance_turnstiles(timestamp, time_step)
         self._advance_trains()
@@ -74,11 +77,11 @@ class Line:
         """Called to stop the simulation"""
         _ = [station.close() for station in self.stations]
 
-    def _advance_turnstiles(self, timestamp, time_step):
+    def _advance_turnstiles(self, timestamp: datetime, time_step: timedelta) -> None:
         """Advances the turnstiles in the simulation"""
         _ = [station.turnstile.run(timestamp, time_step) for station in self.stations]
 
-    def _advance_trains(self):
+    def _advance_trains(self) -> None:
         """Advances trains between stations in the simulation"""
         # Find the first b train
         curr_train, curr_index, b_direction = self._next_train()
@@ -134,7 +137,7 @@ class Line:
         else:
             self.stations[curr_index].arrive_a(curr_train, prev_station, prev_dir)
 
-    def _next_train(self, start_index=0, b_direction=True, step_size=1):
+    def _next_train(self, start_index: int = 0, b_direction: bool = True, step_size: int = 1):
         """Given a starting index, finds the next train in either direction"""
         if b_direction is True:
             curr_index = self._next_train_b(start_index, step_size)
